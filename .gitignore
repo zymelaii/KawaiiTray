@@ -1,0 +1,11 @@
+.*/
+build/
+BUILD_*/
+
+*.pch
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
