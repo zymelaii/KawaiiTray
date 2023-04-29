@@ -10,8 +10,6 @@ protected:
 public:
     WndHelper(const char* CLASSID);
 
-    inline virtual void init() {}
-
     inline virtual bool notify(UINT msg, WPARAM wParam, LPARAM lParam) {
         return false;
     }

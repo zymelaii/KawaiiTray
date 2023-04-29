@@ -13,8 +13,6 @@ LRESULT CALLBACK WndHelper::defaultCallbackFunc(
 }
 
 WndHelper::WndHelper(const char* CLASSID) {
-    init();
-
     WNDCLASS wndcls{};
     wndcls.style         = CS_HREDRAW | CS_VREDRAW;
     wndcls.lpfnWndProc   = &WndHelper::defaultCallbackFunc;
