@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(
     KawaiiTray
-    VERSION 0.1.0
+    VERSION 1.0.0
     DESCRIPTION "A designable kawaii tray icon for windows"
     HOMEPAGE_URL "https://github.com/zymelaii/KawaiiTray"
     LANGUAGES C CXX

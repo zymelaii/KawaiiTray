@@ -9,6 +9,7 @@ protected:
 
 public:
     WndHelper(const char* CLASSID);
+    virtual ~WndHelper();
 
     inline virtual bool notify(UINT msg, WPARAM wParam, LPARAM lParam) {
         return false;
@@ -21,5 +22,6 @@ public:
     }
 
 private:
-    HWND instance_;
+    HWND        instance_;
+    const char* classid_;
 };

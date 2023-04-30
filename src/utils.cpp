@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 #include <string>
+#include <string.h>
+#include <malloc.h>
 
 LRESULT CALLBACK WndHelper::defaultCallbackFunc(
     HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -13,6 +15,8 @@ LRESULT CALLBACK WndHelper::defaultCallbackFunc(
 }
 
 WndHelper::WndHelper(const char* CLASSID) {
+    classid_ = strdup(CLASSID);
+
     WNDCLASS wndcls{};
     wndcls.style         = CS_HREDRAW | CS_VREDRAW;
     wndcls.lpfnWndProc   = &WndHelper::defaultCallbackFunc;
@@ -54,6 +58,11 @@ WndHelper::WndHelper(const char* CLASSID) {
 
     SetWindowLongPtr(
         instance_, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+}
+
+WndHelper::~WndHelper() {
+    UnregisterClass(classid_, GetModuleHandle(nullptr));
+    free(const_cast<char*>(classid_));
 }
 
 int WndHelper::exec() const {
