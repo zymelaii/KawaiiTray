@@ -17,6 +17,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Pull Submodules
+      run:
+        git submodule update --init --recursive
+
     - name: Get Version
       id: get_version
       run: echo VERSION=$(if ('${{ github.ref }}' -match '^refs/tags/(.*)$') { $Matches.1 }) >> $env:GITHUB_OUTPUT
