@@ -1,6 +1,11 @@
 aux_source_directory(. SOURCE_FILES)
+set(RC_FILES ${CMAKE_SOURCE_DIR}/assets/app.rc)
 
-add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
+add_executable(
+    ${CMAKE_PROJECT_NAME}
+    ${SOURCE_FILES}
+    ${RC_FILES}
+)
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
     set_target_properties(
@@ -17,6 +22,6 @@ install(
 )
 
 install(
-    DIRECTORY ${CMAKE_SOURCE_DIR}/assets
+    DIRECTORY ${CMAKE_SOURCE_DIR}/assets/app/assets
     DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
