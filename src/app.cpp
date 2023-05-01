@@ -1,6 +1,7 @@
 #include "app.h"
 #include "cpu_monitor.h"
 
+#include <yaml-cpp/yaml.h>
 #include <algorithm>
 #include <string>
 #include <stdarg.h>
@@ -13,13 +14,15 @@ constexpr static auto RENDER_INTERVAL_MINMAX = std::make_pair(20, 100);
 struct KawaiiTrayWndPrivate {
     constexpr static UINT TRAYID = 0;
 
-    HMENU                    menu;
-    HMENU                    themeMenu;
-    std::vector<std::string> themes;
-    int                      currentThemeId;
-    NOTIFYICONDATA           nid;
-    std::queue<HICON>        iconAnimeSet;
-    int                      updateInterval;
+    using theme_pair_t = std::pair<std::string, std::string>;
+
+    HMENU                     menu;
+    HMENU                     themeMenu;
+    std::vector<theme_pair_t> themes;
+    int                       currentThemeId;
+    NOTIFYICONDATA            nid;
+    std::queue<HICON>         iconAnimeSet;
+    int                       updateInterval;
 
     KawaiiTrayWndPrivate()
         : menu{nullptr}
@@ -63,7 +66,7 @@ struct KawaiiTrayWndPrivate {
                 themeMenu,
                 MF_STRING | MF_UNCHECKED,
                 Action::SelectTheme | (themeId + 1),
-                themes[themeId].c_str());
+                themes[themeId].first.c_str());
         }
 
         AppendMenu(
@@ -87,24 +90,29 @@ struct KawaiiTrayWndPrivate {
 
         const auto path = fs::path(KawaiiTrayWnd::assetLocation())
                               .append("themes")
-                              .append(themes[themeId]);
+                              .append(themes[themeId].second);
         assert(fs::exists(path));
 
         release();
 
-        for (const auto& e : fs::directory_iterator(path)) {
-            if (!e.is_regular_file()) { continue; }
-            auto ext = e.path().extension().string();
-            std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
-            if (ext != ".ico") { continue; }
+        const auto node = YAML::LoadFile((path / "mainfest").string());
+        const auto seq  = node["sequence"];
+        for (const auto& frame : seq) {
+            const auto framePath = path / frame.as<std::string>();
+            assert(fs::is_regular_file(framePath));
+            assert(({
+                auto ext = framePath.extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
+                ext == ".ico";
+            }));
             auto handle = LoadImage(
                 nullptr,
-                e.path().string().c_str(),
+                framePath.string().c_str(),
                 IMAGE_ICON,
                 0,
                 0,
                 LR_LOADFROMFILE | LR_DEFAULTSIZE);
-            if (handle == nullptr) { continue; }
+            assert(handle != nullptr);
             iconAnimeSet.push(static_cast<HICON>(handle));
         }
         assert(!iconAnimeSet.empty());
@@ -156,8 +164,16 @@ KawaiiTrayWnd::~KawaiiTrayWnd() {
     KillTimer(handle(), TID_RENDER);
 }
 
-const std::vector<std::string>& KawaiiTrayWnd::themes() const {
-    return d->themes;
+std::vector<std::string> KawaiiTrayWnd::themes() const {
+    std::vector<std::string> resp{};
+    std::transform(
+        d->themes.begin(),
+        d->themes.end(),
+        std::back_inserter(resp),
+        [](const auto& e) {
+            return e.first;
+        });
+    return std::move(resp);
 }
 
 size_t KawaiiTrayWnd::loadThemes() {
@@ -165,7 +181,25 @@ size_t KawaiiTrayWnd::loadThemes() {
     if (!fs::exists(path)) { fs::create_directories(path); }
     for (const auto& e : fs::directory_iterator(path)) {
         if (!e.is_directory()) { continue; }
-        d->themes.push_back(e.path().filename().string());
+        const auto path = e.path() / "mainfest";
+        if (!fs::exists(path)) { continue; }
+        try {
+            auto node = YAML::LoadFile(path.string());
+            if (!node["name"]) { continue; }
+            const auto seq = node["sequence"];
+            if (!seq || !seq.IsSequence()) { continue; }
+            bool allFramesExist = true;
+            for (const auto& frame : seq) {
+                if (!fs::exists(e.path() / frame.as<std::string>())) {
+                    allFramesExist = false;
+                    break;
+                }
+            }
+            if (seq.size() == 0 || !allFramesExist) { continue; }
+            const auto name = node["name"].as<std::string>();
+            const auto dir  = e.path().filename().string();
+            d->themes.push_back({name, dir});
+        } catch (YAML::BadFile) { continue; }
     }
     return d->themes.size();
 }

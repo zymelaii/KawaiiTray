@@ -7,6 +7,11 @@ add_executable(
     ${RC_FILES}
 )
 
+target_link_libraries(
+    ${CMAKE_PROJECT_NAME}
+    PRIVATE yaml-cpp::yaml-cpp
+)
+
 if(CMAKE_BUILD_TYPE STREQUAL Release)
     set_target_properties(
         ${CMAKE_PROJECT_NAME}

@@ -22,7 +22,7 @@ public:
     KawaiiTrayWnd();
     ~KawaiiTrayWnd() override;
 
-    const std::vector<std::string>& themes() const;
+    std::vector<std::string> themes() const;
 
     size_t loadThemes();
     void   setTheme(int themeId);
