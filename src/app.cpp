@@ -6,8 +6,9 @@
 #include <stdarg.h>
 #include <assert.h>
 
-constexpr static UINT WM_MENUNOTIFY = WM_USER;
-constexpr static UINT TID_RENDER    = 0x6006f00d;
+constexpr static UINT WM_MENUNOTIFY          = WM_USER;
+constexpr static UINT TID_RENDER             = 0x6006f00d;
+constexpr static auto RENDER_INTERVAL_MINMAX = std::make_pair(20, 100);
 
 struct KawaiiTrayWndPrivate {
     constexpr static UINT TRAYID = 0;
@@ -18,11 +19,13 @@ struct KawaiiTrayWndPrivate {
     int                      currentThemeId;
     NOTIFYICONDATA           nid;
     std::queue<HICON>        iconAnimeSet;
+    int                      updateInterval;
 
     KawaiiTrayWndPrivate()
         : menu{nullptr}
         , themeMenu{nullptr}
-        , currentThemeId{-1} {}
+        , currentThemeId{-1}
+        , updateInterval{RENDER_INTERVAL_MINMAX.second} {}
 
     ~KawaiiTrayWndPrivate() {
         if (menu != nullptr) {
@@ -143,7 +146,7 @@ KawaiiTrayWnd::KawaiiTrayWnd()
         d->setupTrayIcon(handle(), "Kawaii Tray", WM_MENUNOTIFY);
     }
 
-    SetTimer(handle(), TID_RENDER, 10, nullptr);
+    SetTimer(handle(), TID_RENDER, d->updateInterval, nullptr);
 
     CpuMonitor::getInstance().addListener(std::bind(
         &KawaiiTrayWnd::cpuUsageUpdated, this, std::placeholders::_1));
@@ -227,4 +230,7 @@ fs::path KawaiiTrayWnd::assetLocation() {
 
 void KawaiiTrayWnd::cpuUsageUpdated(float usage) {
     setTipText("CPU: %.2f%%", usage * 100);
+    const auto& [minval, maxval] = RENDER_INTERVAL_MINMAX;
+    d->updateInterval = static_cast<int>(maxval + (minval - maxval) * usage);
+    SetTimer(handle(), TID_RENDER, d->updateInterval, nullptr);
 }
