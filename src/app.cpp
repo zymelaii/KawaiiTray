@@ -1,8 +1,9 @@
 #include "app.h"
+#include "cpu_monitor.h"
 
 #include <algorithm>
 #include <string>
-#include <iostream>
+#include <stdarg.h>
 #include <assert.h>
 
 constexpr static UINT WM_MENUNOTIFY = WM_USER;
@@ -143,6 +144,9 @@ KawaiiTrayWnd::KawaiiTrayWnd()
     }
 
     SetTimer(handle(), TID_RENDER, 10, nullptr);
+
+    CpuMonitor::getInstance().addListener(std::bind(
+        &KawaiiTrayWnd::cpuUsageUpdated, this, std::placeholders::_1));
 }
 
 KawaiiTrayWnd::~KawaiiTrayWnd() {
@@ -165,6 +169,14 @@ size_t KawaiiTrayWnd::loadThemes() {
 
 void KawaiiTrayWnd::setTheme(int themeId) {
     d->switchTo(themeId);
+}
+
+void KawaiiTrayWnd::setTipText(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vsprintf_s(d->nid.szTip, fmt, args);
+    va_end(args);
+    Shell_NotifyIcon(NIM_MODIFY, &d->nid);
 }
 
 bool KawaiiTrayWnd::notify(UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -211,4 +223,8 @@ fs::path KawaiiTrayWnd::assetLocation() {
     GetModuleFileName(nullptr, buffer, MAX_PATH);
     assert(GetLastError() == 0);
     return fs::absolute(buffer).replace_filename("assets");
+}
+
+void KawaiiTrayWnd::cpuUsageUpdated(float usage) {
+    setTipText("CPU: %.2f%%", usage * 100);
 }

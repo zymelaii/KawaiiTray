@@ -26,10 +26,14 @@ public:
 
     size_t loadThemes();
     void   setTheme(int themeId);
+    void   setTipText(const char* fmt, ...);
     bool   notify(UINT msg, WPARAM wParam, LPARAM lParam) override;
     void   handleAction(Action action);
 
     static fs::path assetLocation();
+
+protected:
+    void cpuUsageUpdated(float usage);
 
 private:
     std::unique_ptr<KawaiiTrayWndPrivate> d;
