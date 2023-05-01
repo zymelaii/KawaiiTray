@@ -22,6 +22,8 @@ public:
     KawaiiTrayWnd();
     ~KawaiiTrayWnd() override;
 
+    const std::vector<std::string>& themes() const;
+
     size_t loadThemes();
     void   setTheme(int themeId);
     bool   notify(UINT msg, WPARAM wParam, LPARAM lParam) override;

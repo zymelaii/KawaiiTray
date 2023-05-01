@@ -137,14 +137,20 @@ KawaiiTrayWnd::KawaiiTrayWnd()
     const auto resp = loadThemes();
     assert(resp > 0);
 
-    d->setupMenu();
-    d->setupTrayIcon(handle(), "Kawaii Tray", WM_MENUNOTIFY);
+    if (resp > 0) {
+        d->setupMenu();
+        d->setupTrayIcon(handle(), "Kawaii Tray", WM_MENUNOTIFY);
+    }
 
     SetTimer(handle(), TID_RENDER, 10, nullptr);
 }
 
 KawaiiTrayWnd::~KawaiiTrayWnd() {
     KillTimer(handle(), TID_RENDER);
+}
+
+const std::vector<std::string>& KawaiiTrayWnd::themes() const {
+    return d->themes;
 }
 
 size_t KawaiiTrayWnd::loadThemes() {

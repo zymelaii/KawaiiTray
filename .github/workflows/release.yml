@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - 'v\d+.\d+*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    env:
+      BUILD_TYPE: Release
+      ARCH: x86_64
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Get Version
+      id: get_version
+      run: echo VERSION=$(if ('${{ github.ref }}' -match '^refs/tags/(.*)$') { $Matches.1 }) >> $env:GITHUB_OUTPUT
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} --install-prefix ${{ github.workspace }}/${{ env.BUILD_TYPE }}
+
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+
+    - name: Archive
+      id: archive
+      env:
+        ARCHIVE_FILES: KawaiiTray-${{ steps.get_version.outputs.VERSION }}-${{ env.ARCH }}.tar.gz
+      run: |
+        cmake --install build
+        tar -czf ${{ env.ARCHIVE_FILES }} -C${{ env.BUILD_TYPE }} *
+        echo ARCHIVE_FILES=${{ env.ARCHIVE_FILES }} >> $env:GITHUB_OUTPUT
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: ${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        generate_release_notes: true
+        append_body: true
+        files: ${{ steps.archive.outputs.ARCHIVE_FILES }}
+        token: ${{ secrets.release }}
